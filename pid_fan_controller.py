@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 from simple_pid import PID
 import time, glob, yaml, subprocess
+import os
 
 class PwmFan:
-    def __init__(self, name, devPath, minPwm, maxPwm, press_srcs):
+    def __init__(self, name, devPath, minPwm, maxPwm, press_srcs, ipmi_cmds, ):
         assert minPwm < maxPwm
         assert minPwm >= 0 and minPwm <= 255
         assert maxPwm >= 0 and maxPwm <= 255
@@ -13,6 +14,7 @@ class PwmFan:
         self.maxPwm = maxPwm
         self.range = self.maxPwm - self.minPwm
         self.press_srcs = press_srcs
+        self.ipmi_cmds = ipmi_cmds
 
     def set_speed(self, percentage, dry_run=False):
         """
@@ -22,10 +24,18 @@ class PwmFan:
         assert percentage >= 0.0 and percentage <= 1.0
         pwm = self.minPwm + self.range * percentage
         if dry_run:
-            print(self.devPath, int(pwm))
+            if self.devPath != None:
+              print(self.devPath, int(pwm))
+            elif self.ipmi_cmds != None:
+              print(self.ipmi_cmds, int(pwm))
         else:
-            with open(self.devPath, 'w') as f:
-                f.write(str(int(pwm)))
+            if self.devPath != None:
+              with open(self.devPath, 'w') as f:
+                  f.write(str(int(pwm)))
+            elif self.ipmi_cmds != None:
+                cmdline = self.ipmi_cmds['ipmi_bin'] + " " + self.ipmi_cmds['fan_speed_pct'].replace("0xpp", hex(int(pwm)))
+                #print(cmdline)
+                os.system(cmdline)
 
     def get_pressure_srcs(self):
         return self.press_srcs
@@ -91,13 +101,23 @@ def get_only_one_wildcard_match(wc_path):
 
 def instantiate_fan(cfg):
     name = cfg['name']
-    wc_path = cfg['wildcard_path']
+    try:
+      wc_path = cfg['wildcard_path']
+    except:
+      wc_path = None
+    try:
+      ipmi_cmds = cfg['ipmi_cmds']
+    except:
+      ipmi_cmds = None
     min_pwm = cfg['min_pwm']
     max_pwm = cfg['max_pwm']
     press_srcs = cfg['heat_pressure_srcs']
-    path = get_only_one_wildcard_match(wc_path)
+    if wc_path != None:
+      path = get_only_one_wildcard_match(wc_path)
+    else:
+      path = None
 
-    return PwmFan(name, path, min_pwm, max_pwm, press_srcs)
+    return PwmFan(name, path, min_pwm, max_pwm, press_srcs, ipmi_cmds)
 
 def instantiate_hp_src(cfg, sample_interval):
     name = cfg['name']
@@ -150,14 +170,36 @@ class PID_fan_controller:
 
     def override_fan_auto_control(self, override, dry_run=False):
         for fan in self.config['fans']:
-            pwm_modes = fan['pwm_modes']
-            path = get_only_one_wildcard_match(pwm_modes['pwm_mode_wildcard_path'])
-            mode = pwm_modes['manual'] if override else pwm_modes['auto']
+            try:
+              pwm_modes = fan['pwm_modes']
+            except:
+              pwm_modes = None
+            if pwm_modes != None:
+              path = get_only_one_wildcard_match(pwm_modes['pwm_mode_wildcard_path'])
+              mode = pwm_modes['manual'] if override else pwm_modes['auto']
+            try:
+              ipmi_cmds = fan['ipmi_cmds']
+            except:
+              ipmi_cmds = None
             if dry_run:
-                print(path, mode)
+              if pwm_modes != None:
+                  print(path, mode)
+              elif ipmi_cmds != None:
+                  if override:
+                    print(ipmi_cmds['ipmi_bin'],ipmi_cmds['enable_static_fan_control'])
+                  else:
+                    print(ipmi_cmds['ipmi_bin'],ipmi_cmds['disable_static_fan_control'])
             else:
+              if pwm_modes != None:
                 with open(path, 'w') as f:
-                    f.write(str(mode))
+                  f.write(str(mode))
+              elif ipmi_cmds != None:
+                if override:
+                  cmdline = ipmi_cmds['ipmi_bin'] + " " + ipmi_cmds['enable_static_fan_control']
+                else: 
+                  cmdline = ipmi_cmds['ipmi_bin'] + " " + ipmi_cmds['disable_static_fan_control']  
+                #print(cmdline)
+                os.system(cmdline)
 
     def set_manual_fan_speed(self, fan_speed, dry_run=False):
             for fan in self.fans:

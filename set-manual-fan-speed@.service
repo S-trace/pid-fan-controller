@@ -1,7 +1,7 @@
 [Unit]
 Description = Set manual fan speed to %i percent
-After = lm_sensors.service
-Requires = lm_sensors.service
+#After = lm_sensors.service
+#Requires = lm_sensors.service
 After = multi-user.target
 Conflicts  = pid-fan-controller.service
 

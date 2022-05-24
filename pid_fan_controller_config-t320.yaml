@@ -1,0 +1,23 @@
+# PID sample interval in seconds
+sample_interval: 0.5
+heat_pressure_srcs:
+  - name: CPU
+    wildcard_path: /sys/class/hwmon/hwmon3/temp1_input
+    PID_params:
+      set_point: 45
+      P: -0.005
+      I: -0.005
+      D: -0.006
+
+fans:
+  - name: aio_exhaust
+    ipmi_cmds:
+      disable_static_fan_control: "raw 0x30 0x30 0x01 0x01"
+      enable_static_fan_control: "raw 0x30 0x30 0x01 0x00"
+      fan_speed_pct: "raw 0x30 0x30 0x02 0xff 0xpp"
+      ipmi_dev_name:  "Sys Fan1"
+      ipmi_bin: "/usr/bin/ipmitool"
+    min_pwm: 20
+    max_pwm: 100
+    heat_pressure_srcs:
+      - CPU
