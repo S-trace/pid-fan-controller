@@ -6,9 +6,10 @@ After=multi-user.target
 
 [Service]
 Type=simple
-ExecStartPre=/usr/local/pid-fan-controller/override_auto_fan_control.py 1
-ExecStart=/usr/local/pid-fan-controller/main_loop.py
-ExecStopPost=/usr/local/pid-fan-controller/override_auto_fan_control.py 0
+Environment="PATH=/usr/local/pid-fan-controller/pid_fan_env/bin"
+ExecStartPre=/usr/local/pid-fan-controller/pid_fan_env/bin/python3 /usr/local/pid-fan-controller/override_auto_fan_control.py 1
+ExecStart=/usr/local/pid-fan-controller/pid_fan_env/bin/python3 /usr/local/pid-fan-controller/main_loop.py
+ExecStopPost=/usr/local/pid-fan-controller/pid_fan_env/bin/python3 /usr/local/pid-fan-controller/override_auto_fan_control.py 0
 
 [Install]
 WantedBy=multi-user.target

@@ -9,10 +9,24 @@ unit_file="/etc/systemd/system"
 CONFIG_FILE=${1:-pid_fan_controller_config.yaml}
 echo "Config file set to ${CONFIG_FILE}"
 
+mkdir ${dest} 2>/dev/null
+
+echo -n "Checking for presence of VENV..."
+RESULTSTR=$(source ${dest}/pid_fan_env/bin/activate)
+EXITCODE=$?
+if [ "$EXITCODE" -ne 0 ]; then
+       echo "Failed"
+       echo "Attempting to create VENV..."
+       pushd /usr/local/pid-fan-controller/
+       python3 -m venv pid_fan_env
+       popd
+       source ${dest}/pid_fan_env/bin/activate
+fi       
+
 FINAL_RESULT="OK"
 for module in six simple_pid yaml time glob subprocess; do
 echo -n "Checking for module ${module}... "
-RESULT=$(module=${module} python3 -c 'import pkgutil, os; print("OK" if pkgutil.find_loader(os.environ["module"]) else "missing")')
+RESULT=$(module=${module} ${dest}/pid_fan_env/bin/python3 -c 'import pkgutil, os; print("OK" if pkgutil.find_loader(os.environ["module"]) else "missing")')
 echo "$RESULT"
 if [ "$RESULT" != "OK" ]; then
 	FINAL_RESULT="Failed"
@@ -23,7 +37,6 @@ if [ "$FINAL_RESULT" != "OK" ]; then
 	exit 1
 fi
 
-mkdir ${dest} 2>/dev/null
 for file in main_loop.py override_auto_fan_control.py pid_fan_controller.py set_manual_fan_speed.py; do
 	echo "Copying ${file} to ${dest}..."
 	cp ${file} ${dest}
