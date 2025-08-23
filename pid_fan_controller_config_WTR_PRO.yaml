@@ -1,0 +1,53 @@
+# PID sample interval in seconds
+sample_interval: 0.5
+heat_pressure_srcs:
+  - name: CPU
+    # IT8613E Tctl - Universal solution for Aoostar WTR PRO with DSM or Proxmox VE
+    wildcard_path: /sys/devices/platform/it87.2608/hwmon/hwmon*/temp3_input
+    # k10temp Tctl - better, but has issues on DSM 7.2.2. Use this on Proxmox VE.
+    # wildcard_path: /sys/devices/pci0000:00/0000:00:18.3/hwmon/hwmon*/temp1_input
+    PID_params:
+      set_point: 76
+      P: -0.005
+      I: -0.005
+      D: -0.006
+
+  - name: HDD
+    # IT8613E Tdisks (the sensor is on the disk bin metal housing of Aoostar WTR PRO)
+    # Universal solution, but not shows precise HDDs temperatures.
+    # Not requires the container access to HDDs block devices files.
+    wildcard_path: /sys/devices/platform/it87.2608/hwmon/hwmon*/temp1_input
+    # Generic solution for systems without HDD bin thermistor.
+    # Get max of the HDDs temperatures using smartctl
+    # WARNING: smartctl requires the container to have access to HDDs block devices files!
+    # WARNING: smartctl causes HDDs activity, so this method can cause HDDs wear!
+    # temp_cmd: /usr/local/pid-fan-controller/get_disk_bin_temp.sh /etc/disk_bin_temp_monitor.conf
+    PID_params:
+      set_point: 40
+      P: -0.04
+      I: -0.0002
+      D: 0 # Differential part is not required for massive mechanical HDDs - temperatures changes are very slow
+
+fans:
+  - name: cpu
+    wildcard_path: /sys/devices/platform/it87.2608/hwmon/hwmon*/pwm2
+    pwm_modes:
+      manual: 1
+      auto: 2
+      pwm_mode_wildcard_path: /sys/devices/platform/it87.2608/hwmon/hwmon*/pwm2_enable
+    min_pwm: 25
+    max_pwm: 255
+    heat_pressure_srcs:
+      - CPU
+  - name: hdd
+    wildcard_path: /sys/devices/platform/it87.2608/hwmon/hwmon*/pwm3
+    pwm_modes:
+      manual: 1
+      auto: 2
+      pwm_mode_wildcard_path: /sys/devices/platform/it87.2608/hwmon/hwmon*/pwm3_enable
+    min_pwm: 87
+    max_pwm: 255
+    # max(heat_pressure_srcs)
+    # src names must be from the `name` in heat_pressure_srcs
+    heat_pressure_srcs:
+      - HDD
