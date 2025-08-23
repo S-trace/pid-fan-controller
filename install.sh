@@ -9,6 +9,10 @@ unit_file="/etc/systemd/system"
 CONFIG_FILE=${1:-pid_fan_controller_config.yaml}
 echo "Config file set to ${CONFIG_FILE}"
 
+DISK_CONFIG_FILE=${2:-disk_bin_temp_monitor.conf}
+echo "Disk config file set to ${DISK_CONFIG_FILE}"
+
+
 mkdir ${dest} 2>/dev/null
 
 echo -n "Checking for presence of VENV..."
@@ -40,13 +44,15 @@ if [ "$FINAL_RESULT" != "OK" ]; then
 	exit 1
 fi
 
-for file in main_loop.py override_auto_fan_control.py pid_fan_controller.py set_manual_fan_speed.py; do
+for file in main_loop.py override_auto_fan_control.py pid_fan_controller.py set_manual_fan_speed.py get_disk_bin_temp.sh; do
 	echo "Copying ${file} to ${dest}..."
 	cp ${file} ${dest}
 done
 
-echo "Copying ${CONFIG_FILE} to /etc..."
-cp ${CONFIG_FILE} /etc
+for file in ${CONFIG_FILE} ${DISK_CONFIG_FILE}; do
+  echo "Copying ${file} to /etc..."
+  cp "${file}" /etc/
+done
 
 for file in pid-fan-controller.service pid-fan-controller-sleep-hook.service set-manual-fan-speed@.service; do
 	echo "Copying ${file} to ${unit_file}..."
