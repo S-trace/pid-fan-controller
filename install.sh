@@ -23,8 +23,11 @@ if [ "$EXITCODE" -ne 0 ]; then
        source ${dest}/pid_fan_env/bin/activate
 fi       
 
+echo -n "Installing requirements to VENV..."
+pip install -r requirements.txt
+
 FINAL_RESULT="OK"
-for module in six simple_pid yaml time glob subprocess; do
+for module in $(cat requirements.txt); do
 echo -n "Checking for module ${module}... "
 RESULT=$(module=${module} ${dest}/pid_fan_env/bin/python3 -c 'import pkgutil, os; print("OK" if pkgutil.find_loader(os.environ["module"]) else "missing")')
 echo "$RESULT"
