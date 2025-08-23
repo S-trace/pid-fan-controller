@@ -1,7 +1,7 @@
 [Unit]
 Description=PID fan controller
-#After=lm_sensors.service
-#Requires=lm_sensors.service
+#After=lm-sensors.service
+#Requires=lm-sensors.service
 After=multi-user.target
 
 [Service]
