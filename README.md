@@ -70,3 +70,11 @@ We can see the logs from cProfile built-in Python that:
     *   285 (57*5 fans) execution of set_speed
     *   114 (57*2 PID controllers) PID read calls
     *   228 (114*double sampling rate) PID calculations. By the time this profiling was done, the PID controllers had sample_time set to be 0.5 seconds.
+
+# Per-source `sample_interval`
+
+Each `heat_pressure_src` section may include an optional `sample_interval` parameter.  
+This defines how often the temperature command (`temp_cmd`) or the file from `wildcard_path` is actually read.  
+If omitted, the global `sample_interval` from the root config is used.
+
+This feature helps reduce system load, especially when using expensive temperature providers such as `get_disk_bin_temp.sh`, by avoiding unnecessary frequent command executions.

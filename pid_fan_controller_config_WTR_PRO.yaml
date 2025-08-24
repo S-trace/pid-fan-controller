@@ -17,11 +17,13 @@ heat_pressure_srcs:
     # Universal solution, but not shows precise HDDs temperatures.
     # Not requires the container access to HDDs block devices files.
     wildcard_path: /sys/devices/platform/it87.2608/hwmon/hwmon*/temp1_input
+    sample_interval: 30
     # Generic solution for systems without HDD bin thermistor.
     # Get max of the HDDs temperatures using smartctl
     # WARNING: smartctl requires the container to have access to HDDs block devices files!
     # WARNING: smartctl causes HDDs activity, so this method can cause HDDs wear!
     # temp_cmd: /usr/local/pid-fan-controller/get_disk_bin_temp.sh /etc/disk_bin_temp_monitor.conf
+    # sample_interval: 900
     PID_params:
       set_point: 40
       P: -0.04

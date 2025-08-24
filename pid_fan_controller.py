@@ -45,11 +45,9 @@ class TempSensor:
         self.devPath = devPath
 
     def read_temp(self):
-        f = open(self.devPath, 'r')
-        # integer type temperature in milli degrees
-        temp = str(f.read()).strip()
-        f.close()
-        # convert to float degrees
+        with open(self.devPath, 'r') as f:
+            temp = str(f.read()).strip()
+		# convert to float degrees
         return int(temp)/1000.0
 
 class CmdTempSensor:
@@ -85,10 +83,15 @@ class HeatPressureSrc:
                 output_limits=(0.0, 1.0),
                 sample_time=self.sample_interval
                 )
+        self._last_temp = None
+        self._last_read_time = 0
 
     def get_heat_pressure(self):
-        temperature = self.temp_sensor.read_temp()
-        heat_pressure = self.pid_controller(temperature)
+        now = time.time()
+        if self._last_temp is None or (now - self._last_read_time) >= self.sample_interval:
+            self._last_temp = self.temp_sensor.read_temp()
+            self._last_read_time = now
+        heat_pressure = self.pid_controller(self._last_temp)
         return heat_pressure
 
     def get_name(self):
@@ -119,7 +122,7 @@ def instantiate_fan(cfg):
 
     return PwmFan(name, path, min_pwm, max_pwm, press_srcs, ipmi_cmds)
 
-def instantiate_hp_src(cfg, sample_interval):
+def instantiate_hp_src(cfg, global_sample_interval):
     name = cfg['name']
     PID_params = cfg['PID_params']
     if 'wildcard_path' in cfg:
@@ -132,6 +135,8 @@ def instantiate_hp_src(cfg, sample_interval):
         print(cfg)
         raise RuntimeError("Neither `temp_cmd` or `wildcard_path` exists")
 
+    sample_interval = cfg.get('sample_interval', global_sample_interval)
+
     return HeatPressureSrc(name = name, path = path,
             temp_cmd = temp_cmd,
             set_point = PID_params['set_point'],
@@ -140,6 +145,7 @@ def instantiate_hp_src(cfg, sample_interval):
             D = PID_params['D'],
             sample_interval = sample_interval
             )
+
 class PID_fan_controller:
     def __init__(self, config_file):
         with open(config_file, 'r') as f:
