@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  pid-fan-controller:
+    build: .
+    container_name: pid-fan-controller
+    restart: unless-stopped
+    volumes:
+      # Mount config file as a volume to allow user to edit it without rebuilding the image
+      - ./pid_fan_controller_config_WTR_PRO.yaml:/app/pid_fan_controller_config_WTR_PRO.yaml
+
+      # Temperature sensors and PWM control (it87)
+      - /sys/devices/platform/it87.2608/hwmon:/sys/devices/platform/it87.2608/hwmon:rw
+
+      # CPU precise and fast sensor (k10temp) - use on Proxmox VE and Generic Linux
+      # DSM 7.2.2 with kernel 5.10.55+ does not have a valid k10temp driver for AMD Ryzen 7 5825U (yet?)
+      # - /sys/devices/pci0000:00/0000:00:18.3/hwmon:/sys/devices/pci0000:00/0000:00:18.3/hwmon:rw
+
+      # HDDs for get_disk_bin_temp.sh
+      # - /dev/sda:/dev/sda:ro # Proxmox VE and Generic Linux
+      # - /dev/sdb:/dev/sdb:ro
+      # - /dev/sata0:/dev/sata0:ro   # DSM
+      # - /dev/sata1:/dev/sata1:ro
+
+    # Allow container to access /sys and /dev
+    privileged: true
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CONFIG_FILE=./pid_fan_controller_config_WTR_PRO.yaml
