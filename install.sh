@@ -32,10 +32,11 @@ for file in main_loop.py override_auto_fan_control.py pid_fan_controller.py set_
 	cp ${file} ${dest}
 done
 
-for file in ${CONFIG_FILE} ${DISK_CONFIG_FILE}; do
-  echo "Copying ${file} to /etc..."
-  cp "${file}" /etc/
-done
+echo "Copying ${CONFIG_FILE} to /etc/pid_fan_controller_config.yaml"
+cp "${CONFIG_FILE}" /etc/pid_fan_controller_config.yaml
+
+echo "Copying ${DISK_CONFIG_FILE} to /etc/disk_bin_temp_monitor.conf"
+cp "${DISK_CONFIG_FILE}" /etc/disk_bin_temp_monitor.conf
 
 for file in pid-fan-controller.service pid-fan-controller-sleep-hook.service set-manual-fan-speed@.service; do
 	echo "Copying ${file} to ${unit_file}..."
