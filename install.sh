@@ -16,33 +16,16 @@ echo "Disk config file set to ${DISK_CONFIG_FILE}"
 mkdir ${dest} 2>/dev/null
 
 echo -n "Checking for presence of VENV..."
-RESULTSTR=$(source ${dest}/pid_fan_env/bin/activate)
-EXITCODE=$?
-if [ "$EXITCODE" -ne 0 ]; then
-       echo "Failed"
+if ! [ -f "${dest}/pid_fan_env/bin/activate" ]; then
        echo "Attempting to create VENV..."
        pushd /usr/local/pid-fan-controller/
        python3 -m venv pid_fan_env
        popd
-       source ${dest}/pid_fan_env/bin/activate
-fi       
+fi
+source ${dest}/pid_fan_env/bin/activate
 
 echo -n "Installing requirements to VENV..."
-pip install -r requirements.txt
-
-FINAL_RESULT="OK"
-for module in $(cat requirements.txt); do
-echo -n "Checking for module ${module}... "
-RESULT=$(module=${module} ${dest}/pid_fan_env/bin/python3 -c 'import pkgutil, os; print("OK" if pkgutil.find_loader(os.environ["module"]) else "missing")')
-echo "$RESULT"
-if [ "$RESULT" != "OK" ]; then
-	FINAL_RESULT="Failed"
-fi
-done
-
-if [ "$FINAL_RESULT" != "OK" ]; then
-	exit 1
-fi
+pip install -r requirements.txt || exit 1
 
 for file in main_loop.py override_auto_fan_control.py pid_fan_controller.py set_manual_fan_speed.py get_disk_bin_temp.sh; do
 	echo "Copying ${file} to ${dest}..."
