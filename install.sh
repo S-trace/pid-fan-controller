@@ -45,3 +45,6 @@ done
 
 echo "Reloading systemd unit files..."
 systemctl daemon-reload
+
+echo "Enabling and starting systemd unit files..."
+systemctl enable --now pid-fan-controller.service pid-fan-controller-sleep-hook.service
