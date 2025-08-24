@@ -7,7 +7,8 @@ services:
     restart: unless-stopped
     volumes:
       # Mount config file as a volume to allow user to edit it without rebuilding the image
-      - ./pid_fan_controller_config_WTR_PRO.yaml:/app/pid_fan_controller_config_WTR_PRO.yaml
+      - ./pid_fan_controller_config_WTR_PRO.yaml:/app/pid_fan_controller_config_WTR_PRO.yaml:ro
+      - ./disk_bin_temp_monitor.conf:/app/disk_bin_temp_monitor.conf:ro
 
       # Temperature sensors and PWM control (it87)
       - /sys/devices/platform/it87.2608/hwmon:/sys/devices/platform/it87.2608/hwmon:rw
